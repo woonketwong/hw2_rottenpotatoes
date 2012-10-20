@@ -7,7 +7,57 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @movies = Movie.all
+       @all_ratings = Movie.get_all_ratings
+    if params[:sortWhat] == "title"
+       @arg2 = "title"
+       @arg1 = Array.new
+       if session[:sortKeys] != nil
+          session[:sortKeys].each { |key, value|
+          if value == true
+             @arg1 << key 
+          end
+          }
+       end
+       @movies = Movie.find(:all, :conditions => {:rating => @arg1}, :order => @arg2)
+       @colorClass1 = "hilite"
+       @checked = session[:sortKeys]
+       params[:sortWhat] = nil
+    elsif params[:sortWhat] == "release_date"
+       @arg2 = "release_date"
+       @arg1 = Array.new
+       if session[:sortKeys] != nil
+          session[:sortKeys].each { |key, value|
+          if value == true
+             @arg1 << key 
+          end
+          }
+       end
+       @movies = Movie.find(:all, :conditions => {:rating => @arg1}, :order => @arg2)
+       @colorClass2 = "hilite"
+       @checked = session[:sortKeys]
+       params[:sortWhat] = nil
+    elsif params[:commit] == nil
+       @checked = Hash.new
+       @all_ratings.each { |key|
+          @checked[key] = true
+       }
+       session[:sortKeys] = @checked
+       @movies = Movie.all
+    else
+       @checked = Hash.new
+       @all_ratings.each { |key|
+          if params[:ratings].has_key?(key)
+             @checked[key] = true
+          else
+             @checked[key] = false
+          end
+       }
+       session[:sortKeys] = @checked 
+       @arg1 = params[:ratings].keys
+       @args = nil
+       @movies = Movie.find(:all, :conditions => {:rating => @arg1}, :order => @arg2)
+    end
+    
   end
 
   def new
