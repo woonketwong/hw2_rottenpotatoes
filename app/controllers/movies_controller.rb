@@ -9,6 +9,7 @@ class MoviesController < ApplicationController
   def index
        @all_ratings = Movie.get_all_ratings
     if params[:sortWhat] == "title"
+       session[:sortWhat] = "title"
        @arg2 = "title"
        @arg1 = Array.new
        if session[:sortKeys] != nil
@@ -23,6 +24,37 @@ class MoviesController < ApplicationController
        @checked = session[:sortKeys]
        params[:sortWhat] = nil
     elsif params[:sortWhat] == "release_date"
+       session[:sortWhat] = "release_date"
+       @arg2 = "release_date"
+       @arg1 = Array.new
+       if session[:sortKeys] != nil
+          session[:sortKeys].each { |key, value|
+          if value == true
+             @arg1 << key 
+          end
+          }
+       end
+       @movies = Movie.find(:all, :conditions => {:rating => @arg1}, :order => @arg2)
+       @colorClass2 = "hilite"
+       @checked = session[:sortKeys]
+       params[:sortWhat] = nil
+    elsif session[:sortWhat] == "title"
+       session.delete(:sortWhat)
+       @arg2 = "title"
+       @arg1 = Array.new
+       if session[:sortKeys] != nil
+          session[:sortKeys].each { |key, value|
+          if value == true
+             @arg1 << key 
+          end
+          }
+       end
+       @movies = Movie.find(:all, :conditions => {:rating => @arg1}, :order => @arg2)
+       @colorClass1 = "hilite"
+       @checked = session[:sortKeys]
+       params[:sortWhat] = nil
+    elsif session[:sortWhat] == "release_date"
+       session.delete(:sortWhat)
        @arg2 = "release_date"
        @arg1 = Array.new
        if session[:sortKeys] != nil
@@ -43,6 +75,18 @@ class MoviesController < ApplicationController
        }
        session[:sortKeys] = @checked
        @movies = Movie.all
+    elsif params[:commit] == "backToMovieList"
+       @arg2 = ""
+       @arg1 = Array.new
+       if session[:sortKeys] != nil
+          session[:sortKeys].each { |key, value|
+          if value == true
+             @arg1 << key 
+          end
+          }
+       end
+       @movies = Movie.find(:all, :conditions => {:rating => @arg1}, :order => @arg2)
+       @checked = session[:sortKeys]
     else
        @checked = Hash.new
        @all_ratings.each { |key|
