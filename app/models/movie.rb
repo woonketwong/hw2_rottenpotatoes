@@ -1,9 +1,5 @@
 class Movie < ActiveRecord::Base
-
-  @@ratings = ["G","PG","PG-13","R"]
-
-  def self.ratings
-      @@ratings
-  end
-
+	def self.all_ratings
+		self.select(:rating).group(:rating).map { |movie| movie.rating }.sort
+	end
 end
