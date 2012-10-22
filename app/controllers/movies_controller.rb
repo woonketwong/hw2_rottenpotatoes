@@ -7,101 +7,48 @@ class MoviesController < ApplicationController
   end
 
   def index
-       @all_ratings = Movie.get_all_ratings
-    if params[:sortWhat] == "title"
-       session[:sortWhat] = "title"
-       @arg2 = "title"
-       @arg1 = Array.new
-       if session[:sortKeys] != nil
-          session[:sortKeys].each { |key, value|
-          if value == true
-             @arg1 << key 
-          end
-          }
-       end
-       @movies = Movie.find(:all, :conditions => {:rating => @arg1}, :order => @arg2)
-       @colorClass1 = "hilite"
-       @checked = session[:sortKeys]
-       params[:sortWhat] = nil
-    elsif params[:sortWhat] == "release_date"
-       session[:sortWhat] = "release_date"
-       @arg2 = "release_date"
-       @arg1 = Array.new
-       if session[:sortKeys] != nil
-          session[:sortKeys].each { |key, value|
-          if value == true
-             @arg1 << key 
-          end
-          }
-       end
-       @movies = Movie.find(:all, :conditions => {:rating => @arg1}, :order => @arg2)
-       @colorClass2 = "hilite"
-       @checked = session[:sortKeys]
-       params[:sortWhat] = nil
-    elsif session[:sortWhat] == "title"
-       session.delete(:sortWhat)
-       @arg2 = "title"
-       @arg1 = Array.new
-       if session[:sortKeys] != nil
-          session[:sortKeys].each { |key, value|
-          if value == true
-             @arg1 << key 
-          end
-          }
-       end
-       @movies = Movie.find(:all, :conditions => {:rating => @arg1}, :order => @arg2)
-       @colorClass1 = "hilite"
-       @checked = session[:sortKeys]
-       params[:sortWhat] = nil
-    elsif session[:sortWhat] == "release_date"
-       session.delete(:sortWhat)
-       @arg2 = "release_date"
-       @arg1 = Array.new
-       if session[:sortKeys] != nil
-          session[:sortKeys].each { |key, value|
-          if value == true
-             @arg1 << key 
-          end
-          }
-       end
-       @movies = Movie.find(:all, :conditions => {:rating => @arg1}, :order => @arg2)
-       @colorClass2 = "hilite"
-       @checked = session[:sortKeys]
-       params[:sortWhat] = nil
-    elsif params[:commit] == nil
-       @checked = Hash.new
-       @all_ratings.each { |key|
-          @checked[key] = true
-       }
-       session[:sortKeys] = @checked
-       @movies = Movie.all
-    elsif params[:commit] == "backToMovieList"
-       @arg2 = ""
-       @arg1 = Array.new
-       if session[:sortKeys] != nil
-          session[:sortKeys].each { |key, value|
-          if value == true
-             @arg1 << key 
-          end
-          }
-       end
-       @movies = Movie.find(:all, :conditions => {:rating => @arg1}, :order => @arg2)
-       @checked = session[:sortKeys]
-    else
-       @checked = Hash.new
-       @all_ratings.each { |key|
-          if params[:ratings].has_key?(key)
-             @checked[key] = true
-          else
-             @checked[key] = false
-          end
-       }
-       session[:sortKeys] = @checked 
-       @arg1 = params[:ratings].keys
-       @args = nil
-       @movies = Movie.find(:all, :conditions => {:rating => @arg1}, :order => @arg2)
+    @all_ratings = Movie.ratings
+
+    redirect = false
+
+    @category = nil
+    if params.has_key?(:category)
+      @category = params[:category]
+    elsif session.has_key?(:category)
+      @category = session[:category]
+      redirect = true
     end
-    
+
+    @sort = nil
+    if params.has_key?(:sort)
+      @sort = params[:sort]
+    elsif session.has_key?(:sort)
+      @sort = session[:sort]
+      redirect = true
+    end
+
+    @ratings =  {"G" => "1", "PG" => "1", "PG-13" => "1", "R" => "1"}
+    if params.has_key?(:ratings)
+      @ratings = params[:ratings]
+    elsif session.has_key?(:ratings)
+      @ratings = session[:ratings]
+      redirect = true
+    end
+
+    @movies = Movie.where("rating in (?)", @ratings.keys)
+    session[:ratings] = @ratings
+
+    if @category and @sort
+      @movies = @movies.find(:all, :order => "#{@category} #{@sort}")
+      session[:category] = @category
+      session[:sort] = @sort
+    end
+
+    if redirect
+      flash.keep
+      redirect_to movies_path({:category => @category, :sort => @sort, :ratings => @ratings})
+    end
+
   end
 
   def new
