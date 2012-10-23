@@ -7,45 +7,47 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @all_ratings = Movie.all_ratings
+    @all_ratings = Movie.ratings
 
-    if request.query_string.length > 0
-      @ratings = params[:ratings] ? 
-        params[:ratings] : 
-        session[:filter] ? session[:filter] : {}
-      @hilite = params[:sort] ?
-        params[:sort] :
-        session[:sort] ? session[:sort] : nil
-    else
-      @ratings = session[:filter] ? session[:filter] : {}
-      @hilite = session[:sort] ? session[:sort] : nil
+    redirect = false
+
+    @category = nil
+    if params.has_key?(:category)
+      @category = params[:category]
+    elsif session.has_key?(:category)
+      @category = session[:category]
+      redirect = true
     end
 
-    @selected = @ratings.keys
+    @sort = nil
+    if params.has_key?(:sort)
+      @sort = params[:sort]
+    elsif session.has_key?(:sort)
+      @sort = session[:sort]
+      redirect = true
+    end
 
-    @movies = case params[:sort]
-    when "title" then
-      if @selected.empty? then
-        Movie.order("title ASC")
-      else
-        Movie.where(:rating => @selected).order("title ASC")
-      end
-    when "release_date" then
-      if @selected.empty? then
-        Movie.order("release_date ASC")
-      else
-        Movie.where(:rating => @selected).order("release_date ASC")
-      end
-    else 
-      if @selected.empty? then
-        Movie.all
-      else
-        Movie.where(:rating => @selected)
-      end
-    end # end when
+    @ratings =  {"G" => "1", "PG" => "1", "PG-13" => "1", "R" => "1"}
+    if params.has_key?(:ratings)
+      @ratings = params[:ratings]
+    elsif session.has_key?(:ratings)
+      @ratings = session[:ratings]
+      redirect = true
+    end
 
-    session[:filter] = @selected.empty? ? nil : @ratings
-    session[:sort] = @hilite.nil? ? nil : @hilite
+    @movies = Movie.where("rating in (?)", @ratings.keys)
+    session[:ratings] = @ratings
+
+    if @category and @sort
+      @movies = @movies.find(:all, :order => "#{@category} #{@sort}")
+      session[:category] = @category
+      session[:sort] = @sort
+    end
+
+    if redirect
+      flash.keep
+      redirect_to movies_path({:category => @category, :sort => @sort, :ratings => @ratings})
+    end
 
   end
 
